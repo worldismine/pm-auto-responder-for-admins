@@ -1,60 +1,59 @@
 import { withPluginApi } from 'discourse/lib/plugin-api';
 import { ajax } from 'discourse/lib/ajax';
 
-function toggleAutoRespondPm(user) {
-  const path      = user.get("is_auto_responder_enabled") ? "disable" : "enable";
+const propertyPath = "custom_fields.mmn_auto_respond_pm";
+const glyph = {
+  className: "pm-auto-responder-icon",
+  icon: "power-off",
+  action: "toggleAutoRespondPm"
+};
 
-  user.toggleProperty("is_auto_responder_enabled");
-  $(".pm-auto-responder-icon").toggleClass("mmn-icon-active");
+let loading = false;
+
+function iconLabel(enabled) {
+  const iconLabel = enabled ? "disable" : "enable";
+  return `mmn_auto_respond_pm.${iconLabel}`;
+}
+
+function setClassAndLabel(enabled) {
+  const className = "pm-auto-responder-on";
+  const method = enabled ? "add" : "remove";
+
+  $("html")[`${method}Class`](className);
+  glyph.label = iconLabel(enabled);
+}
+
+function toggleAutoRespondPm(user) {
+  const path = user.get(propertyPath) ? "disable" : "enable";
+
+  user.toggleProperty(propertyPath);
+  loading = true;
 
   ajax(`/mmn_auto_respond_pm/${path}`)
-    .catch(e => {
-      console.log(e);
-    }).then(result => {
-      if (result.status != "ok") {
-        user.toggleProperty("is_auto_responder_enabled");
-        $(".pm-auto-responder-icon").toggleClass("mmn-icon-active");
-      }
+    .catch( e => console.error(e) )
+    .then(result => {
+      if (result.status != "ok") user.toggleProperty(propertyPath);
+    }).finally( () => {
+      setClassAndLabel(user.get(propertyPath));
+      loading = false;
     });
 }
 
 function initializeWithApi(api, siteSetting) {
 
-  if (!siteSetting.enable_pm_auto_responder_for_admins) { return; }
+  if (!siteSetting.enable_pm_auto_responder_for_admins) return;
 
-  let currentUser = api.getCurrentUser();
+  const currentUser = api.getCurrentUser();
 
-  if (currentUser && currentUser.get('admin')) {
+  if (!currentUser || !currentUser.get('admin')) return;
 
-    ajax("/mmn_auto_respond_pm/is_enabled")
-      .catch(e => {
-        console.log(e);
-      }).then(result => {
-        const is_enabled = (result.is_enabled == "t" || result.is_enabled == true) ? true : false;
-        currentUser.set("is_auto_responder_enabled", is_enabled);
+  setClassAndLabel(currentUser.get(propertyPath));
 
-        let iconClass = "";
-        let iconLabel;
-
-        if (is_enabled) {
-          iconClass = "mmn-icon-active";
-          iconLabel = "disable";
-        } else {
-          iconLabel = "enable";
-        }
-
-        api.addUserMenuGlyph({
-          label: `mmn_auto_respond_pm.${iconLabel}`,
-          className: `pm-auto-responder-icon ${iconClass}`,
-          icon: 'power-off',
-          action: "toggleAutoRespondPm"
-        });
-      });
-  }
+  api.addUserMenuGlyph(glyph);
 
   api.attachWidgetAction("user-menu", 'toggleAutoRespondPm', function() {
     const { currentUser, siteSettings } = this;
-    if (!siteSettings.enable_pm_auto_responder_for_admins) { return; }
+    if (!siteSettings.enable_pm_auto_responder_for_admins || loading) { return; }
     toggleAutoRespondPm(currentUser);
   });
 

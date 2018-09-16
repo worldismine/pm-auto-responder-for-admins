@@ -1,8 +1,7 @@
 # name: discourse-pm-auto-responder-for-admins
-# about: Discourse Private Message Auto Responder For Admins
-# version: 0.4
+# version: 0.5
 # authors: Muhlis Budi Cahyono (muhlisbc@gmail.com)
-# url: https://github.com/muhlisbc/discourse-pm-auto-responder-for-admins
+# url: https://github.com/muhlisbc
 
 enabled_site_setting :enable_pm_auto_responder_for_admins
 
@@ -10,6 +9,9 @@ DiscoursePluginRegistry.serialized_current_user_fields << "mmn_auto_respond_pm"
 DiscoursePluginRegistry.serialized_current_user_fields << "mmn_auto_respond_message"
 
 after_initialize {
+
+  register_editable_user_custom_field("mmn_auto_respond_pm")
+  register_editable_user_custom_field("mmn_auto_respond_message")
 
   module ::MmnAutoResponder
     def self.included(base)
@@ -46,9 +48,9 @@ after_initialize {
   User.register_custom_field_type("mmn_auto_respond_pm", :boolean)
   User.register_custom_field_type("mmn_auto_respond_message", :text)
 
-  add_to_serializer(:user, :custom_fields, false) {
-    object.custom_fields || {}
-  }
+  # add_to_serializer(:user, :custom_fields, false) {
+  #   object.custom_fields || {}
+  # }
 
   module ::MmnAutoRespondPm
     class Engine < ::Rails::Engine
