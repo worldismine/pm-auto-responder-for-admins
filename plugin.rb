@@ -1,5 +1,5 @@
 # name: discourse-pm-auto-responder-for-admins
-# version: 0.5
+# version: 0.5.1
 # authors: Muhlis Budi Cahyono (muhlisbc@gmail.com)
 # url: https://github.com/muhlisbc
 
@@ -13,44 +13,67 @@ after_initialize {
   register_editable_user_custom_field("mmn_auto_respond_pm")
   register_editable_user_custom_field("mmn_auto_respond_message")
 
-  module ::MmnAutoResponder
-    def self.included(base)
-      base.class_eval {
-        after_commit :send_auto_responder, on: :create
+  module ::Jobs
+    class SendAutoResponderMsg < ::Jobs::Base
 
-        def send_auto_responder
-          return if !SiteSetting.enable_pm_auto_responder_for_admins
+      def execute(args)
+        post = Post.find_by(id: args[:post_id])
+
+        return unless post
+
+        topic = post.topic
+
+        admins    = User.where("id > ?", 0).where(admin: true) # select admins
+        user_ids  = topic.topic_allowed_users.pluck(:user_id)
+
+        counter = 0
+
+        admins.each do |admin|
+          next unless user_ids.include?(admin.id)
+          next unless admin.custom_fields["mmn_auto_respond_pm"]
+
+          auto_respond_msg = admin.custom_fields["mmn_auto_respond_message"].to_s.strip
+          next unless auto_respond_msg.length > 0
+
+          diff_time   = Time.now.to_i - topic.custom_fields["last_auto_respond_by_admin_#{admin.id}"].to_i
+          delay_secs  = SiteSetting.delay_between_auto_responder_message_in_hour.to_i.hour.to_i
+
+          next unless diff_time >= delay_secs
+
+          opts = {
+            topic_id: topic.id,
+            raw: auto_respond_msg,
+            skip_validation: true
+          }
+
+          PostCreator.create!(admin, opts)
+          topic.custom_fields["last_auto_respond_by_admin_#{admin.id}"] = Time.now.to_i
           
-          post_topic = topic
-          
-          return if !post_topic.private_message? # return if regular topic
-
-          return if user.admin # return if message is sent by admin
-
-          admins    = User.where("id > ?", 0).where(admin: true) # select admins
-          user_ids  = post_topic.topic_allowed_users.pluck(:user_id)
-
-          admins.each do |admin|
-            if user_ids.include?(admin.id) && admin.custom_fields["mmn_auto_respond_pm"] && (admin.custom_fields["mmn_auto_respond_message"].to_s.strip.length > 0) && ((Time.now.to_i - post_topic.custom_fields["last_auto_respond_by_admin_#{admin.id}"].to_i) >= SiteSetting.delay_between_auto_responder_message_in_hour.to_i.hour.to_i)
-              PostCreator.create!(admin, topic_id: post_topic.id, raw: admin.custom_fields["mmn_auto_respond_message"], skip_validation: true)
-              post_topic.custom_fields["last_auto_respond_by_admin_#{admin.id}"] = Time.now.to_i
-            end
-          end
-          post_topic.save!
-
+          counter += 1
         end
-      }
-    end
+
+        topic.save! if counter > 0
+      end      
+    end      
   end
 
-  ::Post.send(:include, MmnAutoResponder)
+  require_dependency "post"
+  Post.class_eval {
+    after_commit :send_auto_responder, on: :create
+
+    def send_auto_responder
+      return if !SiteSetting.enable_pm_auto_responder_for_admins
+      
+      return if !topic.private_message? # return if regular topic
+
+      return if user.admin # return if message is sent by admin
+
+      Jobs.enqueue(:send_auto_responder_msg, post_id: self.id)
+    end
+  }
 
   User.register_custom_field_type("mmn_auto_respond_pm", :boolean)
   User.register_custom_field_type("mmn_auto_respond_message", :text)
-
-  # add_to_serializer(:user, :custom_fields, false) {
-  #   object.custom_fields || {}
-  # }
 
   module ::MmnAutoRespondPm
     class Engine < ::Rails::Engine
