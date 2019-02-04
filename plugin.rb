@@ -1,5 +1,5 @@
 # name: discourse-pm-auto-responder-for-admins
-# version: 0.5.1
+# version: 0.6.0
 # authors: Muhlis Budi Cahyono (muhlisbc@gmail.com)
 # url: https://github.com/muhlisbc
 
