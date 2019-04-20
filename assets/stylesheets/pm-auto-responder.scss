@@ -1,3 +1,7 @@
 .pm-auto-responder-on .pm-auto-responder-icon .fa {
   color: green !important;
 }
+
+.control-group.pm-auto-responder .d-editor textarea {
+  flex: auto;
+}

@@ -1,5 +1,5 @@
 # name: discourse-pm-auto-responder-for-admins
-# version: 0.6.0
+# version: 0.6.1
 # authors: Muhlis Budi Cahyono (muhlisbc@gmail.com)
 # url: https://github.com/muhlisbc
 
@@ -48,13 +48,13 @@ after_initialize {
 
           PostCreator.create!(admin, opts)
           topic.custom_fields["last_auto_respond_by_admin_#{admin.id}"] = Time.now.to_i
-          
+
           counter += 1
         end
 
         topic.save! if counter > 0
-      end      
-    end      
+      end
+    end
   end
 
   require_dependency "post"
@@ -63,7 +63,7 @@ after_initialize {
 
     def send_auto_responder
       return if !SiteSetting.enable_pm_auto_responder_for_admins
-      
+
       return if !topic.private_message? # return if regular topic
 
       return if user.admin # return if message is sent by admin
