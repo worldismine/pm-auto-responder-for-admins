@@ -1,7 +1,7 @@
 # name: discourse-pm-auto-responder-for-admins
-# version: 0.6.1
-# authors: Muhlis Budi Cahyono (muhlisbc@gmail.com)
-# url: https://github.com/muhlisbc
+# version: 3.0
+# authors: Muhlis Budi Cahyono (muhlisbc@gmail.com) and richard@communiteq.com
+# url: https://github.com/worldismine/pm-auto-responder-for-admins
 
 enabled_site_setting :enable_pm_auto_responder_for_admins
 
@@ -12,6 +12,14 @@ after_initialize {
 
   register_editable_user_custom_field("mmn_auto_respond_pm")
   register_editable_user_custom_field("mmn_auto_respond_message")
+
+  add_to_serializer(:current_user, :include_mmn_auto_respond_pm) do
+    object.is_admin?
+  end
+
+  add_to_serializer(:current_user, :mmn_auto_respond_pm) do
+    object.custom_fields["mmn_auto_respond_pm"]
+  end
 
   module ::Jobs
     class SendAutoResponderMsg < ::Jobs::Base

@@ -1,5 +1,12 @@
-.pm-auto-responder-on .pm-auto-responder-icon .fa {
+.pm-auto-responder-on .auto-pm-toggler .d-icon {
   color: green !important;
+}
+
+.auto-pm-toggler.btn-flat:focus {
+  background: inherit;
+  .d-icon {
+    color: var(--primary-low-mid);
+  }
 }
 
 .control-group.pm-auto-responder .d-editor textarea {
