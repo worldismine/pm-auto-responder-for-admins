@@ -1,5 +1,5 @@
 # name: discourse-pm-auto-responder-for-admins
-# version: 3.0
+# version: 3.0.1
 # authors: Muhlis Budi Cahyono (muhlisbc@gmail.com) and richard@communiteq.com
 # url: https://github.com/worldismine/pm-auto-responder-for-admins
 
@@ -31,7 +31,7 @@ after_initialize {
 
         topic = post.topic
 
-        admins    = User.where("id > ?", 0).where(admin: true) # select admins
+        admins    = User.where(admin: true) # select admins
         user_ids  = topic.topic_allowed_users.pluck(:user_id)
 
         counter = 0
