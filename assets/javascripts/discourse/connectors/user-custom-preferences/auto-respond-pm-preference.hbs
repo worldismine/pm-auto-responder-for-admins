@@ -1,9 +1,9 @@
-{{#if siteSettings.enable_pm_auto_responder_for_admins}}
-  {{#if model.admin}}
+{{#if this.siteSettings.enable_pm_auto_responder_for_admins}}
+  {{#if this.model.admin}}
     <div class="control-group pm-auto-responder">
       <label class="control-label">Auto responder message</label>
       <div class="controls">
-        {{d-editor value=model.custom_fields.mmn_auto_respond_message showUploadModal="showUploadModal"}}
+        {{d-editor value=this.model.custom_fields.mmn_auto_respond_message showUploadModal="showUploadModal"}}
       </div>
     </div>
   {{/if}}
