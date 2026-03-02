@@ -1,6 +1,6 @@
 import Component from "@glimmer/component";
 import { action, computed } from "@ember/object";
-import { inject as service } from "@ember/service";
+import { service } from "@ember/service";
 import { ajax } from 'discourse/lib/ajax';
 import { observes } from "discourse-common/utils/decorators";
 
@@ -24,7 +24,7 @@ export default class AutoPmToggler extends Component {
   setClassAndLabel(enabled) {
     const className = "pm-auto-responder-on";
     const method = enabled ? "add" : "remove";
-  
+
     $("html")[`${method}Class`](className);
   }
 
